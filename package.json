@@ -1,0 +1,85 @@
+{
+  "name": "bridgesftp",
+  "version": "0.1.0",
+  "description": "SFTP-Client mit Zwei-Fenster-Ansicht, integriertem SSH-Terminal und Update-Anzeige",
+  "homepage": "https://github.com/ghinen/bridgesftp",
+  "bugs": {
+    "url": "https://github.com/ghinen/bridgesftp/issues"
+  },
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never",
+    "dist:win": "electron-builder --win --publish never",
+    "test:unit": "node test/appupdate-test.js",
+    "test:backend": "node test/backend-test.js"
+  },
+  "license": "GPL-3.0-or-later",
+  "build": {
+    "appId": "de.arweh.bridgesftp",
+    "productName": "BridgeSFTP",
+    "files": [
+      "main.js",
+      "preload.js",
+      "LICENSE",
+      "src/**",
+      "renderer/**",
+      "node_modules/**",
+      "!node_modules/cpu-features/build/**",
+      "!node_modules/ssh2/lib/protocol/crypto/build/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "target": "AppImage"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "npmRebuild": false,
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "license": "LICENSE",
+      "shortcutName": "BridgeSFTP",
+      "uninstallDisplayName": "BridgeSFTP ${version}",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.exe"
+    },
+    "copyright": "Copyright © 2026 Arne Wolter · ARWEH"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "ssh2": "^1.17.0"
+  },
+  "devDependencies": {
+    "electron": "^45.3.0",
+    "electron-builder": "^26.18.0"
+  },
+  "author": {
+    "name": "ARWEH – Arne Wolter",
+    "url": "https://github.com/ghinen"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghinen/bridgesftp.git"
+  }
+}

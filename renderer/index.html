@@ -1,0 +1,90 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later · BridgeSFTP – Copyright © 2026 Arne Wolter · ARWEH -->
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>BridgeSFTP</title>
+  <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="toolbar">
+    <button id="btnSites" class="primary" title="Gespeicherte Verbindungen verwalten">🗂 Seiten-Manager</button>
+    <div class="quick">
+      <input id="qHost" placeholder="Host (oder benutzer@host:port)" spellcheck="false">
+      <input id="qUser" placeholder="Benutzer" spellcheck="false">
+      <input id="qPass" type="password" placeholder="Passwort">
+      <input id="qPort" placeholder="Port" value="22" class="port">
+      <button id="btnConnect">Verbinden</button>
+      <button id="btnDisconnect" disabled>Trennen</button>
+    </div>
+    <div class="spacer"></div>
+    <button id="updBadge" class="badge muted" title="Server-Updates">Updates: –</button>
+    <button id="btnHelp" class="icon" title="Hilfe (F1)">?</button>
+  </header>
+  <div id="appUpdateBanner" class="appupdate hidden"></div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-view="files">📁 Dateien</button>
+    <button class="tab" data-view="updates" id="tabUpdates">⬆ Updates</button>
+    <span id="termTabs"></span>
+    <button class="tab add" id="btnNewTerm" title="Neues Terminal (Strg+T)" disabled>＋ Terminal</button>
+  </nav>
+
+  <main id="views">
+    <section class="view active" id="view-files">
+      <div class="panes" id="panes">
+        <div class="pane" id="pane-local"></div>
+        <div class="vsplit" id="paneSplit"></div>
+        <div class="pane" id="pane-remote"></div>
+      </div>
+    </section>
+    <section class="view" id="view-updates"><div id="updatesBody" class="updates"></div></section>
+  </main>
+
+  <div class="hsplit" id="bottomSplit"></div>
+  <section class="bottom" id="bottom">
+    <div class="bottom-tabs">
+      <button class="btab active" data-b="queue">Übertragungen <span id="queueCount" class="count"></span></button>
+      <button class="btab" data-b="log">Protokoll</button>
+      <div class="spacer"></div>
+      <div class="queue-actions">
+        <label>Vorhandene Dateien:
+          <select id="policy">
+            <option value="overwrite">überschreiben</option>
+            <option value="newer">nur wenn neuer</option>
+            <option value="skip">überspringen</option>
+          </select>
+        </label>
+        <button id="qCancel" class="small">Wartende abbrechen</button>
+        <button id="qRetry" class="small">Fehler wiederholen</button>
+        <button id="qClear" class="small">Fertige entfernen</button>
+      </div>
+    </div>
+    <div class="bpanel active" id="b-queue">
+      <table class="list queue">
+        <thead><tr><th style="width:28px"></th><th>Datei</th><th>Ziel</th><th style="width:90px">Größe</th><th style="width:180px">Fortschritt</th><th style="width:90px">Tempo</th><th style="width:110px">Status</th></tr></thead>
+        <tbody id="queueBody"></tbody>
+      </table>
+    </div>
+    <div class="bpanel" id="b-log"><div id="logBody" class="log"></div></div>
+  </section>
+
+  <footer class="status">
+    <span id="statusText">Nicht verbunden</span>
+    <span class="spacer"></span>
+    <span class="hint">F1 Hilfe · Enter öffnen · ⌫ hoch · F2 umbenennen · F4 bearbeiten · F5 aktualisieren · F6 übertragen · F7 neuer Ordner · Entf löschen · Tab Seite wechseln</span>
+    <span id="appVersion" class="appver" title="Über BridgeSFTP"></span>
+  </footer>
+
+  <div id="ctxMenu" class="ctx hidden"></div>
+  <div id="modalRoot"></div>
+  <div id="toasts"></div>
+
+  <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
+  <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script src="app.js"></script>
+  <script src="help.js"></script>
+</body>
+</html>

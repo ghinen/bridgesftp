@@ -1,0 +1,115 @@
+# Baut BridgeSFTP für Windows, Linux und macOS.
+#
+# - Pull Request / manueller Start: nur bauen, Dateien als Artefakt am Lauf
+#   (zum Testen, unter "Actions" → Lauf → "Artifacts").
+# - Release auf GitHub veröffentlicht (Releases → "Draft a new release") oder
+#   Tag "v<version>" hochgeladen: bauen und die Installationsdateien an das
+#   Release hängen (fehlt es, wird es angelegt). Der Tag muss zur Version in
+#   package.json passen.
+name: Build & Release
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+  release:
+    types: [published]
+
+# Ein Release über die GitHub-Seite löst ggf. zwei Ereignisse aus (Release + Tag).
+# Pro Tag läuft deshalb nur ein Build; ein späterer ersetzt einen laufenden.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+          - name: Linux
+            os: ubuntu-latest
+          - name: macOS
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    env:
+      # Kein Code-Signing-Zertifikat vorhanden: Signieren überspringen
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Tag mit package.json-Version abgleichen
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          PKG="v$(node -p "require('./package.json').version")"
+          if [ "$PKG" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME passt nicht zur Version $PKG in package.json"
+            exit 1
+          fi
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Unit-Tests
+        if: runner.os == 'Linux'
+        run: npm run test:unit
+
+      - name: Installationsdateien bauen
+        run: npx electron-builder --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BridgeSFTP-${{ matrix.name }}
+          if-no-files-found: error
+          path: |
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.dmg
+
+  release:
+    name: Dateien ans Release hängen
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: Prüfsummen erzeugen (SHA256SUMS.txt)
+        working-directory: release
+        run: |
+          sha256sum -- * > ../SHA256SUMS.txt
+          mv ../SHA256SUMS.txt .
+          cat SHA256SUMS.txt
+
+      - name: Release anlegen bzw. Dateien hochladen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la release
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # Release wurde auf der GitHub-Seite angelegt: nur die Dateien ergänzen
+            gh release upload "$GITHUB_REF_NAME" release/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "BridgeSFTP ${GITHUB_REF_NAME#v}" \
+              --generate-notes
+          fi
